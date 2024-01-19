@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+
+bigdata2023classification/
+
+.DS_Store

@@ -5,6 +5,7 @@ from collections import Counter
 from IPython.display import display
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+import nltk
 
 
 def remove_html(text):
@@ -16,6 +17,11 @@ def clean_html(df, modify_columns):
         df[col] = df[col].apply(remove_html)
     return df
 
+def clean_urls(df, modify_columns):
+    for col in modify_columns:
+        df[col] = df[col].str.replace(r"http\S+", "", regex=True)
+        df[col] = df[col].str.replace(r"www\.\S+", "", regex=True)
+    return df
 
 def clean_numbers(df, modify_columns):
     for col in modify_columns:
@@ -40,18 +46,41 @@ def clean_tokenize(df, modify_columns):
         df[col] = df[col].apply(word_tokenize)
     return df
 
-
 def clean_stopwords(df, modify_columns):
     stop_words = set(stopwords.words("english"))
-
     for col in modify_columns:
-        df[col] = df[col].apply(lambda words: [w for w in words if w not in stop_words])
+        df[col] = df[col].apply(lambda words: ' '.join([w for w in words if w not in stop_words]))
     return df
 
+# def clean_stopwords(df, modify_columns):
+#     stop_words = set(stopwords.words("english"))
+
+#     for col in modify_columns:
+#         df[col] = df[col].apply(lambda words: [w for w in words if w not in stop_words])
+#     return df
+
+
+# def clean_rarewords(df, modify_columns):
+#     for col in modify_columns:
+#         flat_list = [item for sublist in df[col] for item in sublist]
+#         word_counts = Counter(flat_list).most_common()
+
+#         pos = len(word_counts) // 20
+#         rare_words = set(word for word, _ in word_counts[:pos])
+#         common_words = set(word for word, _ in word_counts[-pos:])
+
+#         df[col] = df[col].apply(
+#             lambda words: [
+#                 word
+#                 for word in words
+#                 if word not in rare_words and word not in common_words
+#             ]
+#         )
+#     return df
 
 def clean_rarewords(df, modify_columns):
     for col in modify_columns:
-        flat_list = [item for sublist in df[col] for item in sublist]
+        flat_list = [item for sublist in df[col].apply(word_tokenize) for item in sublist]
         word_counts = Counter(flat_list).most_common()
 
         pos = len(word_counts) // 20
@@ -59,11 +88,11 @@ def clean_rarewords(df, modify_columns):
         common_words = set(word for word, _ in word_counts[-pos:])
 
         df[col] = df[col].apply(
-            lambda words: [
+            lambda words: ' '.join([
                 word
-                for word in words
+                for word in word_tokenize(words)
                 if word not in rare_words and word not in common_words
-            ]
+            ])
         )
     return df
 
@@ -90,8 +119,13 @@ def lemmatize_cell(cell):
 
 def clean_lemmatize(df, modify_columns):
     for col in modify_columns:
-        df[col] = df[col].apply(lemmatize_cell)
+        df[col] = df[col].apply(lambda cell: ' '.join(lemmatize_cell(word_tokenize(cell))))
     return df
+
+# def clean_lemmatize(df, modify_columns):
+#     for col in modify_columns:
+#         df[col] = df[col].apply(lemmatize_cell)
+#     return df
 
 
 def transform(df, modify_columns):
@@ -99,12 +133,15 @@ def transform(df, modify_columns):
     print("HTML clean done")
     df = clean_numbers(df, modify_columns)
     print("Numbers clean done")
+    df = clean_urls(df, modify_columns)
+    print("URLs clean done")
     df = clean_punctuation(df, modify_columns)
     print("Punctation clean done")
     df = clean_uppercase(df, modify_columns)
     print("Uppercase clean done")
     df = clean_tokenize(df, modify_columns)
     print("Tokenize done")
+    nltk.download('stopwords')
     df = clean_stopwords(df, modify_columns)
     print("Stopwords clean done")
     df = clean_rarewords(df, modify_columns)

@@ -115,9 +115,6 @@ def transform(df, modify_columns):
     df = clean_stopwords(df, modify_columns)
     print("Stopwords clean done")
 
-    df, col_features_dict = clean_common_rare_words(df, modify_columns, min_df, max_df)
-    print("Clean rare-common words clean done")
-
     df = clean_lemmatize(df, modify_columns)
     print("Lemmatize done")
 
